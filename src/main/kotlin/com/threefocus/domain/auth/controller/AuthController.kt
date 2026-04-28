@@ -1,6 +1,7 @@
 package com.threefocus.domain.auth.controller
 
 import com.threefocus.domain.auth.dto.LoginRequest
+import com.threefocus.domain.auth.dto.RefreshRequest
 import com.threefocus.domain.auth.dto.SignUpRequest
 import com.threefocus.domain.auth.dto.TokenResponse
 import com.threefocus.domain.auth.service.AuthService
@@ -25,4 +26,9 @@ class AuthController(private val authService: AuthService) {
     @PostMapping("/login")
     fun login(@Valid @RequestBody request: LoginRequest): TokenResponse =
         authService.login(request)
+
+    @Operation(summary = "토큰 재발급")
+    @PostMapping("/refresh")
+    fun refresh(@Valid @RequestBody request: RefreshRequest): TokenResponse =
+        authService.refresh(request)
 }

@@ -1,6 +1,7 @@
 package com.threefocus.domain.auth.service
 
 import com.threefocus.domain.auth.dto.LoginRequest
+import com.threefocus.domain.auth.dto.RefreshRequest
 import com.threefocus.domain.auth.dto.SignUpRequest
 import com.threefocus.domain.auth.dto.TokenResponse
 import com.threefocus.domain.auth.entity.User
@@ -39,6 +40,16 @@ class AuthService(
             throw ApiException(ErrorCode.INVALID_PASSWORD)
         }
         return issueTokens(user.id)
+    }
+
+    @Transactional(readOnly = true)
+    fun refresh(request: RefreshRequest): TokenResponse {
+        if (!jwtTokenProvider.isRefreshToken(request.refreshToken)) {
+            throw ApiException(ErrorCode.INVALID_TOKEN)
+        }
+        val userId = runCatching { jwtTokenProvider.getUserId(request.refreshToken) }
+            .getOrElse { throw ApiException(ErrorCode.INVALID_TOKEN) }
+        return issueTokens(userId)
     }
 
     private fun issueTokens(userId: Long) = TokenResponse(
