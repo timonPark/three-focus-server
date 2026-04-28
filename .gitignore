@@ -9,4 +9,3 @@ out/
 .DS_Store
 application-local.yml
 application-prod.yml
-skills/
