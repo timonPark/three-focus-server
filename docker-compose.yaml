@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: three_focus_db
+    environment:
+      POSTGRES_DB: three_focus
+      POSTGRES_USER: three_focus_user
+      POSTGRES_PASSWORD: three_focus_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
