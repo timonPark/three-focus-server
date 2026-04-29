@@ -19,7 +19,7 @@ class TodoService(
 ) {
     @Transactional
     fun create(userId: Long, request: CreateTodoRequest): TodoResponse {
-        val todo = todoRepository.save(Todo(userId = userId, title = request.title, date = request.date))
+        val todo = todoRepository.save(Todo(userId = userId, title = request.title, date = request.date!!))
         return TodoResponse.from(todo)
     }
 

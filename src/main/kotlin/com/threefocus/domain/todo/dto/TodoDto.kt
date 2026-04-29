@@ -2,12 +2,13 @@ package com.threefocus.domain.todo.dto
 
 import com.threefocus.domain.todo.entity.Todo
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class CreateTodoRequest(
     @field:NotBlank val title: String,
-    val date: LocalDate,
+    @field:NotNull val date: LocalDate?,
 )
 
 data class UpdateTodoRequest(
