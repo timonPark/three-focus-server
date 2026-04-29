@@ -1,11 +1,13 @@
 package com.threefocus.domain.todo.service
 
+import com.threefocus.domain.schedule.repository.ScheduleRepository
 import com.threefocus.domain.todo.dto.CreateTodoRequest
 import com.threefocus.domain.todo.dto.TodoResponse
 import com.threefocus.domain.todo.dto.UpdateTodoRequest
 import com.threefocus.domain.todo.entity.Todo
 import com.threefocus.domain.todo.repository.TodoQueryRepository
 import com.threefocus.domain.todo.repository.TodoRepository
+import com.threefocus.domain.top3.repository.Top3Repository
 import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
 import org.springframework.stereotype.Service
@@ -16,6 +18,8 @@ import java.time.LocalDate
 class TodoService(
     private val todoRepository: TodoRepository,
     private val todoQueryRepository: TodoQueryRepository,
+    private val scheduleRepository: ScheduleRepository,
+    private val top3Repository: Top3Repository,
 ) {
     @Transactional
     fun create(userId: Long, request: CreateTodoRequest): TodoResponse {
@@ -46,6 +50,8 @@ class TodoService(
     @Transactional
     fun delete(userId: Long, todoId: Long) {
         val todo = findOwned(userId, todoId)
+        scheduleRepository.deleteByTodoId(todo.id)
+        top3Repository.deleteByTodoId(todo.id)
         todoRepository.deleteById(todo.id)
     }
 
