@@ -4,6 +4,7 @@ import com.threefocus.global.security.JwtAuthenticationFilter
 import com.threefocus.global.security.JwtTokenProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -30,6 +31,7 @@ class SecurityConfig(
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
                 ).permitAll()
+                it.requestMatchers(HttpMethod.GET, "/api/shares/*").permitAll()
                 it.anyRequest().authenticated()
             }
             .addFilterBefore(

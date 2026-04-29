@@ -1,11 +1,12 @@
 package com.threefocus.domain.schedule.dto
 
 import com.threefocus.domain.schedule.entity.Schedule
+import jakarta.validation.constraints.NotNull
 import java.time.LocalTime
 
 data class AssignScheduleRequest(
-    val todoId: Long,
-    val startTime: LocalTime,
+    @field:NotNull val todoId: Long?,
+    @field:NotNull val startTime: LocalTime?,
 )
 
 data class ScheduleResponse(

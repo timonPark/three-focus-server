@@ -2,9 +2,11 @@ package com.threefocus.domain.share.controller
 
 import com.threefocus.domain.share.dto.CreateShareRequest
 import com.threefocus.domain.share.dto.ShareResponse
+import com.threefocus.domain.share.dto.SharedScheduleResponse
 import com.threefocus.domain.share.service.ShareService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
@@ -20,11 +22,11 @@ class ShareController(private val shareService: ShareService) {
     @ResponseStatus(HttpStatus.CREATED)
     fun createShare(
         @AuthenticationPrincipal user: UserDetails,
-        @RequestBody request: CreateShareRequest,
+        @Valid @RequestBody request: CreateShareRequest,
     ): ShareResponse = shareService.createShare(user.username.toLong(), request)
 
     @Operation(summary = "공유 일정 조회")
     @GetMapping("/{shareToken}")
-    fun getShare(@PathVariable shareToken: String): ShareResponse =
+    fun getShare(@PathVariable shareToken: String): SharedScheduleResponse =
         shareService.getShare(shareToken)
 }
