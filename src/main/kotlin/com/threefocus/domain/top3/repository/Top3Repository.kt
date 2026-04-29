@@ -12,4 +12,6 @@ interface Top3Repository : JpaRepository<Top3, Long> {
     @Modifying
     @Query("DELETE FROM Top3 t WHERE t.userId = :userId AND t.date = :date")
     fun deleteAllByUserIdAndDate(@Param("userId") userId: Long, @Param("date") date: LocalDate)
+
+    fun deleteByTodoId(todoId: Long)
 }
