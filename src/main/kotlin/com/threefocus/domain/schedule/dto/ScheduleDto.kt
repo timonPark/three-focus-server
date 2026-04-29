@@ -22,3 +22,11 @@ data class ScheduleResponse(
         )
     }
 }
+
+data class DailyScheduleItemResponse(
+    val orderIndex: Int,
+    val todoId: Long,
+    val title: String,
+    val isCompleted: Boolean,
+    val startTime: LocalTime?,
+)

@@ -1,6 +1,7 @@
 package com.threefocus.domain.schedule.service
 
 import com.threefocus.domain.schedule.dto.AssignScheduleRequest
+import com.threefocus.domain.schedule.dto.DailyScheduleItemResponse
 import com.threefocus.domain.schedule.dto.ScheduleResponse
 import com.threefocus.domain.schedule.entity.Schedule
 import com.threefocus.domain.schedule.repository.ScheduleQueryRepository
@@ -10,6 +11,7 @@ import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 class ScheduleService(
@@ -33,4 +35,8 @@ class ScheduleService(
         )
         return ScheduleResponse.from(schedule)
     }
+
+    @Transactional(readOnly = true)
+    fun getByDate(userId: Long, date: LocalDate): List<DailyScheduleItemResponse> =
+        scheduleQueryRepository.findDailyScheduleByUserIdAndDate(userId, date)
 }
