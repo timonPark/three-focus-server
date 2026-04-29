@@ -39,4 +39,12 @@ class ScheduleService(
     @Transactional(readOnly = true)
     fun getByDate(userId: Long, date: LocalDate): List<DailyScheduleItemResponse> =
         scheduleQueryRepository.findDailyScheduleByUserIdAndDate(userId, date)
+
+    @Transactional
+    fun remove(userId: Long, todoId: Long) {
+        val todo = todoQueryRepository.findById(todoId)
+            ?: throw ApiException(ErrorCode.TODO_NOT_FOUND)
+        if (todo.userId != userId) throw ApiException(ErrorCode.FORBIDDEN)
+        scheduleRepository.deleteByTodoId(todoId)
+    }
 }
