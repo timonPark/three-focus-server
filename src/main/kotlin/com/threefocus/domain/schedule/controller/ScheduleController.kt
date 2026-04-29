@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
@@ -31,4 +32,12 @@ class ScheduleController(private val scheduleService: ScheduleService) {
         @AuthenticationPrincipal user: UserDetails,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
     ): List<DailyScheduleItemResponse> = scheduleService.getByDate(user.username.toLong(), date)
+
+    @Operation(summary = "시간 배치 취소")
+    @DeleteMapping("/{todoId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun remove(
+        @AuthenticationPrincipal user: UserDetails,
+        @PathVariable todoId: Long,
+    ) = scheduleService.remove(user.username.toLong(), todoId)
 }
