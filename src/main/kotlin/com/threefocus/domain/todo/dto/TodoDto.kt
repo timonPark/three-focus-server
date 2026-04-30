@@ -12,8 +12,8 @@ data class CreateTodoRequest(
 )
 
 data class UpdateTodoRequest(
-    val title: String?,
-    val isCompleted: Boolean?,
+    val title: String? = null,
+    val isCompleted: Boolean? = null,
 )
 
 data class TodoResponse(

@@ -2,6 +2,7 @@ package com.threefocus.global.config
 
 import com.threefocus.global.security.JwtAuthenticationFilter
 import com.threefocus.global.security.JwtTokenProvider
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -33,6 +34,11 @@ class SecurityConfig(
                 ).permitAll()
                 it.requestMatchers(HttpMethod.GET, "/api/shares/*").permitAll()
                 it.anyRequest().authenticated()
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint { _, response, _ ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
+                }
             }
             .addFilterBefore(
                 JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
