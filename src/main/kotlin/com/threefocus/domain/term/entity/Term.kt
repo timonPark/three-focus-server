@@ -1,38 +1,27 @@
-package com.threefocus.domain.auth.entity
+package com.threefocus.domain.term.entity
 
 import jakarta.persistence.*
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "users")
-class User(
+@Table(name = "terms")
+class Term(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(nullable = false, unique = true)
-    val email: String,
-
-    @Column(nullable = false)
-    var password: String,
-
-    @Column(nullable = false)
-    val name: String,
-
-    @Column(nullable = false)
-    val phone: String,
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    val gender: Gender,
+    @Column(nullable = false, unique = true)
+    val type: TermType,
 
     @Column(nullable = false)
-    val birthday: LocalDate,
+    val title: String,
+
+    @Column(nullable = false)
+    val isRequired: Boolean,
+
+    @Column(nullable = false)
+    val version: String,
 
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 )
-
-enum class Gender {
-    MALE, FEMALE
-}

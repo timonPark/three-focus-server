@@ -3,9 +3,15 @@ package com.threefocus.domain.auth.service
 import com.threefocus.domain.auth.dto.LoginRequest
 import com.threefocus.domain.auth.dto.RefreshRequest
 import com.threefocus.domain.auth.dto.SignUpRequest
+import com.threefocus.domain.auth.dto.TermAgreementRequest
+import com.threefocus.domain.auth.entity.Gender
 import com.threefocus.domain.auth.entity.User
 import com.threefocus.domain.auth.repository.UserQueryRepository
 import com.threefocus.domain.auth.repository.UserRepository
+import com.threefocus.domain.term.entity.Term
+import com.threefocus.domain.term.entity.TermType
+import com.threefocus.domain.term.repository.TermRepository
+import com.threefocus.domain.term.repository.UserTermRepository
 import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
 import com.threefocus.global.security.JwtTokenProvider
@@ -19,28 +25,66 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.LocalDate
 
 @ExtendWith(MockitoExtension::class)
 class AuthServiceTest {
 
     @Mock private lateinit var userRepository: UserRepository
     @Mock private lateinit var userQueryRepository: UserQueryRepository
+    @Mock private lateinit var termRepository: TermRepository
+    @Mock private lateinit var userTermRepository: UserTermRepository
     @Mock private lateinit var passwordEncoder: PasswordEncoder
     @Mock private lateinit var jwtTokenProvider: JwtTokenProvider
 
     @InjectMocks private lateinit var authService: AuthService
 
-    private val savedUser = User(id = 1L, email = "test@example.com", password = "encoded_pw")
+    private val savedUser = User(
+        id = 1L,
+        email = "test@example.com",
+        password = "encoded_pw",
+        name = "홍길동",
+        phone = "010-1234-5678",
+        gender = Gender.MALE,
+        birthday = LocalDate.of(1990, 1, 1),
+    )
+
+    private val requiredTerms = listOf(
+        Term(id = 1L, type = TermType.SERVICE_TERMS, title = "서비스 이용약관 동의", isRequired = true, version = "1.0"),
+        Term(id = 2L, type = TermType.PRIVACY_POLICY, title = "개인정보 처리방침 동의", isRequired = true, version = "1.0"),
+    )
+    private val allTerms = requiredTerms + listOf(
+        Term(id = 3L, type = TermType.MARKETING, title = "마케팅 정보 수신 동의", isRequired = false, version = "1.0"),
+    )
+
+    private fun signUpRequest(
+        termAgreements: List<TermAgreementRequest> = listOf(
+            TermAgreementRequest(TermType.SERVICE_TERMS, true),
+            TermAgreementRequest(TermType.PRIVACY_POLICY, true),
+            TermAgreementRequest(TermType.MARKETING, false),
+        ),
+    ) = SignUpRequest(
+        email = "test@example.com",
+        password = "password123",
+        name = "홍길동",
+        phone = "010-1234-5678",
+        gender = Gender.MALE,
+        birthday = LocalDate.of(1990, 1, 1),
+        termAgreements = termAgreements,
+    )
 
     @Test
     fun `signUp - 성공 시 토큰 반환`() {
         given(userQueryRepository.existsByEmail("test@example.com")).willReturn(false)
+        given(termRepository.findAllByIsRequired(true)).willReturn(requiredTerms)
+        given(termRepository.findAll()).willReturn(allTerms)
         given(passwordEncoder.encode("password123")).willReturn("encoded_pw")
         given(userRepository.save(any())).willReturn(savedUser)
+        given(userTermRepository.save(any())).willReturn(any())
         given(jwtTokenProvider.generateAccessToken(1L)).willReturn("access-token")
         given(jwtTokenProvider.generateRefreshToken(1L)).willReturn("refresh-token")
 
-        val result = authService.signUp(SignUpRequest("test@example.com", "password123"))
+        val result = authService.signUp(signUpRequest())
 
         assertThat(result.accessToken).isEqualTo("access-token")
         assertThat(result.refreshToken).isEqualTo("refresh-token")
@@ -50,11 +94,26 @@ class AuthServiceTest {
     fun `signUp - 이메일 중복 시 DUPLICATE_EMAIL 예외`() {
         given(userQueryRepository.existsByEmail("test@example.com")).willReturn(true)
 
-        val ex = assertThrows<ApiException> {
-            authService.signUp(SignUpRequest("test@example.com", "password123"))
-        }
+        val ex = assertThrows<ApiException> { authService.signUp(signUpRequest()) }
 
         assertThat(ex.errorCode).isEqualTo(ErrorCode.DUPLICATE_EMAIL)
+    }
+
+    @Test
+    fun `signUp - 필수 약관 미동의 시 REQUIRED_TERMS_NOT_AGREED 예외`() {
+        given(userQueryRepository.existsByEmail("test@example.com")).willReturn(false)
+        given(termRepository.findAllByIsRequired(true)).willReturn(requiredTerms)
+
+        val ex = assertThrows<ApiException> {
+            authService.signUp(signUpRequest(
+                termAgreements = listOf(
+                    TermAgreementRequest(TermType.SERVICE_TERMS, true),
+                    TermAgreementRequest(TermType.PRIVACY_POLICY, false),
+                )
+            ))
+        }
+
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.REQUIRED_TERMS_NOT_AGREED)
     }
 
     @Test
