@@ -35,6 +35,25 @@ src/main/kotlin/com/threefocus
 
 각 도메인은 `controller / service / repository / entity / dto` 구조로 구성됩니다.
 
+## 기능 추가 프로세스
+
+새 기능을 추가할 때는 아래 순서로 진행합니다.
+
+```
+1. DB 마이그레이션     src/main/resources/db/migration/V{n}__description.sql
+2. Entity             domain/{도메인}/entity/
+3. DTO                domain/{도메인}/dto/
+4. Repository         domain/{도메인}/repository/
+                        - JPA  : CUD (UserRepository)
+                        - jOOQ : Query (UserQueryRepository)
+5. Service            domain/{도메인}/service/
+6. Controller         domain/{도메인}/controller/
+7. 테스트              test/.../service/{도메인}ServiceTest.kt     (단위)
+                      test/.../controller/{도메인}ControllerTest.kt (통합)
+```
+
+> 마이그레이션 파일은 한 번 적용되면 수정 불가 — 변경이 필요하면 새 버전(V{n+1})으로 추가합니다.
+
 ## DB 접근 전략
 
 - **JPA** — 단건 CUD (Create, Update, Delete)
