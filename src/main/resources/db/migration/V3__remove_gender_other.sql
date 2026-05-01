@@ -1,0 +1,2 @@
+UPDATE users SET gender = 'MALE' WHERE gender = 'OTHER';
+ALTER TABLE users ALTER COLUMN gender DROP DEFAULT;
