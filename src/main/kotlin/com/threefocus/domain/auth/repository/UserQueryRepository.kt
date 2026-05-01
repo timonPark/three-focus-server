@@ -40,7 +40,6 @@ class UserQueryRepository(private val dsl: DSLContext) {
         phone = record.get("phone", String::class.java),
         gender = Gender.valueOf(record.get("gender", String::class.java)),
         birthday = record.get("birthday", LocalDate::class.java),
-        termsAgreed = record.get("terms_agreed", Boolean::class.java),
         createdAt = record.get("created_at", LocalDateTime::class.java),
     )
 }

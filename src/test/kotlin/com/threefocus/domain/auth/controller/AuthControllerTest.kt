@@ -3,11 +3,14 @@ package com.threefocus.domain.auth.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.threefocus.domain.auth.dto.LoginRequest
 import com.threefocus.domain.auth.dto.SignUpRequest
+import com.threefocus.domain.auth.dto.TermAgreementRequest
 import com.threefocus.domain.auth.dto.TokenResponse
+import com.threefocus.domain.auth.entity.Gender
 import com.threefocus.domain.auth.service.AuthService
+import com.threefocus.domain.term.entity.TermType
+import com.threefocus.global.config.SecurityConfig
 import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
-import com.threefocus.global.config.SecurityConfig
 import com.threefocus.global.security.JwtTokenProvider
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -19,6 +22,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
+import java.time.LocalDate
 
 @WebMvcTest(AuthController::class)
 @Import(SecurityConfig::class)
@@ -33,13 +37,32 @@ class AuthControllerTest {
 
     private val tokens = TokenResponse("access-token", "refresh-token")
 
+    private fun validSignUpRequest(
+        email: String = "test@example.com",
+        password: String = "password123",
+        termAgreements: List<TermAgreementRequest> = listOf(
+            TermAgreementRequest(TermType.SERVICE_TERMS, true),
+            TermAgreementRequest(TermType.PRIVACY_POLICY, true),
+            TermAgreementRequest(TermType.MARKETING, false),
+        ),
+    ) = SignUpRequest(
+        email = email,
+        password = password,
+        name = "홍길동",
+        phone = "010-1234-5678",
+        gender = Gender.MALE,
+        birthday = LocalDate.of(1990, 1, 1),
+        termAgreements = termAgreements,
+    )
+
     @Test
     fun `POST sign-up - 성공 시 201 반환`() {
-        given(authService.signUp(SignUpRequest("test@example.com", "password123"))).willReturn(tokens)
+        val request = validSignUpRequest()
+        given(authService.signUp(request)).willReturn(tokens)
 
         mockMvc.post("/api/auth/sign-up") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(SignUpRequest("test@example.com", "password123"))
+            content = objectMapper.writeValueAsString(request)
         }.andExpect {
             status { isCreated() }
             jsonPath("$.accessToken") { value("access-token") }
@@ -50,7 +73,7 @@ class AuthControllerTest {
     fun `POST sign-up - 이메일 형식 오류 시 400 반환`() {
         mockMvc.post("/api/auth/sign-up") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(SignUpRequest("not-an-email", "password123"))
+            content = objectMapper.writeValueAsString(validSignUpRequest(email = "not-an-email"))
         }.andExpect {
             status { isBadRequest() }
         }
@@ -60,7 +83,7 @@ class AuthControllerTest {
     fun `POST sign-up - 비밀번호 8자 미만 시 400 반환`() {
         mockMvc.post("/api/auth/sign-up") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(SignUpRequest("test@example.com", "short"))
+            content = objectMapper.writeValueAsString(validSignUpRequest(password = "short"))
         }.andExpect {
             status { isBadRequest() }
         }
@@ -68,14 +91,32 @@ class AuthControllerTest {
 
     @Test
     fun `POST sign-up - 이메일 중복 시 409 반환`() {
-        given(authService.signUp(SignUpRequest("test@example.com", "password123")))
-            .willThrow(ApiException(ErrorCode.DUPLICATE_EMAIL))
+        val request = validSignUpRequest()
+        given(authService.signUp(request)).willThrow(ApiException(ErrorCode.DUPLICATE_EMAIL))
 
         mockMvc.post("/api/auth/sign-up") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(SignUpRequest("test@example.com", "password123"))
+            content = objectMapper.writeValueAsString(request)
         }.andExpect {
             status { isConflict() }
+        }
+    }
+
+    @Test
+    fun `POST sign-up - 필수 약관 미동의 시 400 반환`() {
+        val request = validSignUpRequest(
+            termAgreements = listOf(
+                TermAgreementRequest(TermType.SERVICE_TERMS, true),
+                TermAgreementRequest(TermType.PRIVACY_POLICY, false),
+            )
+        )
+        given(authService.signUp(request)).willThrow(ApiException(ErrorCode.REQUIRED_TERMS_NOT_AGREED))
+
+        mockMvc.post("/api/auth/sign-up") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isBadRequest() }
         }
     }
 
