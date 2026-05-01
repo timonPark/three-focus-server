@@ -37,5 +37,5 @@ class User(
 )
 
 enum class Gender {
-    MALE, FEMALE, OTHER
+    MALE, FEMALE
 }
