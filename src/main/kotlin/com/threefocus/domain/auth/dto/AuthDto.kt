@@ -1,12 +1,17 @@
 package com.threefocus.domain.auth.dto
 
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Size
+import com.threefocus.domain.auth.entity.Gender
+import jakarta.validation.constraints.*
+import java.time.LocalDate
 
 data class SignUpRequest(
     @field:Email val email: String,
     @field:NotBlank @field:Size(min = 8) val password: String,
+    @field:NotBlank @field:Size(max = 50) val name: String,
+    @field:NotBlank val phone: String,
+    @field:NotNull val gender: Gender,
+    @field:NotNull @field:Past val birthday: LocalDate,
+    @field:AssertTrue val termsAgreed: Boolean,
 )
 
 data class LoginRequest(

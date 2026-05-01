@@ -27,7 +27,15 @@ class AuthService(
             throw ApiException(ErrorCode.DUPLICATE_EMAIL)
         }
         val user = userRepository.save(
-            User(email = request.email, password = passwordEncoder.encode(request.password))
+            User(
+                email = request.email,
+                password = passwordEncoder.encode(request.password),
+                name = request.name,
+                phone = request.phone,
+                gender = request.gender,
+                birthday = request.birthday,
+                termsAgreed = request.termsAgreed,
+            )
         )
         return issueTokens(user.id)
     }
