@@ -73,6 +73,8 @@ src/main/kotlin/com/threefocus
 | 인증 | POST | `/api/auth/sign-up` | 회원가입 | X |
 | 인증 | POST | `/api/auth/login` | 로그인 | X |
 | 인증 | POST | `/api/auth/refresh` | 액세스 토큰 재발급 | X |
+| 인증 | POST | `/api/auth/google` | Google OAuth 로그인/회원가입 | X |
+| 인증 | POST | `/api/auth/complete-profile` | 소셜 가입 후 추가 정보 입력 | O |
 | 할 일 | POST | `/api/todos` | 할 일 생성 | O |
 | 할 일 | GET | `/api/todos?date={date}` | 날짜별 할 일 조회 | O |
 | 할 일 | PUT | `/api/todos/{todoId}` | 할 일 수정 | O |
@@ -138,6 +140,14 @@ http://localhost:8080/swagger-ui.html
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
+### 환경 변수
+
+프로젝트 루트에 `.env.local` 파일을 생성하고 아래 값을 입력합니다 (`.gitignore`에 등록됨):
+
+| 변수 | 설명 | 필수 |
+|------|------|------|
+| `GOOGLE_CLIENT_ID` | Google Cloud Console에서 발급한 OAuth 클라이언트 ID | Google 로그인 사용 시 |
+
 ## 테스트
 
 ### 전체 테스트 실행
@@ -184,8 +194,18 @@ src/test/kotlin/com/threefocus/domain/
 
 ## 인증
 
+### 이메일/비밀번호
+
 JWT Bearer Token 방식을 사용합니다. 로그인 또는 회원가입 후 발급된 `accessToken`을 요청 헤더에 포함해야 합니다.
 
 ```
 Authorization: Bearer {accessToken}
 ```
+
+### Google OAuth
+
+1. 프론트엔드에서 NextAuth.js를 통해 Google 인증 후 ID 토큰 획득
+2. `POST /api/auth/google`에 ID 토큰 전달 → `accessToken`, `refreshToken`, `isProfileComplete` 반환
+3. `isProfileComplete: false`이면 `POST /api/auth/complete-profile`로 추가 정보 입력 (phone, gender, birthday, 약관 동의)
+
+동일 이메일로 이미 이메일/비밀번호 가입이 되어 있으면 409 에러가 반환됩니다.

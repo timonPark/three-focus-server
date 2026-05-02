@@ -29,7 +29,19 @@ data class RefreshRequest(
     @field:NotBlank val refreshToken: String,
 )
 
+data class GoogleLoginRequest(
+    @field:NotBlank val idToken: String,
+)
+
+data class CompleteProfileRequest(
+    @field:NotBlank val phone: String,
+    @field:NotNull val gender: Gender,
+    @field:NotNull @field:Past val birthday: LocalDate,
+    @field:NotEmpty val termAgreements: List<TermAgreementRequest>,
+)
+
 data class TokenResponse(
     val accessToken: String,
     val refreshToken: String,
+    val isProfileComplete: Boolean = true,
 )

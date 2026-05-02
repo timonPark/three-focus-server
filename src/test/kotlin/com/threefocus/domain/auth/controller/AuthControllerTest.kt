@@ -1,6 +1,8 @@
 package com.threefocus.domain.auth.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.threefocus.domain.auth.dto.CompleteProfileRequest
+import com.threefocus.domain.auth.dto.GoogleLoginRequest
 import com.threefocus.domain.auth.dto.LoginRequest
 import com.threefocus.domain.auth.dto.SignUpRequest
 import com.threefocus.domain.auth.dto.TermAgreementRequest
@@ -20,6 +22,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import java.time.LocalDate
@@ -36,6 +39,7 @@ class AuthControllerTest {
     @MockBean private lateinit var userDetailsService: UserDetailsService
 
     private val tokens = TokenResponse("access-token", "refresh-token")
+    private val incompleteTokens = TokenResponse("access-token", "refresh-token", isProfileComplete = false)
 
     private fun validSignUpRequest(
         email: String = "test@example.com",
@@ -55,6 +59,17 @@ class AuthControllerTest {
         termAgreements = termAgreements,
     )
 
+    private fun validCompleteProfileRequest() = CompleteProfileRequest(
+        phone = "010-9999-8888",
+        gender = Gender.FEMALE,
+        birthday = LocalDate.of(1995, 6, 15),
+        termAgreements = listOf(
+            TermAgreementRequest(TermType.SERVICE_TERMS, true),
+            TermAgreementRequest(TermType.PRIVACY_POLICY, true),
+            TermAgreementRequest(TermType.MARKETING, false),
+        ),
+    )
+
     @Test
     fun `POST sign-up - 성공 시 201 반환`() {
         val request = validSignUpRequest()
@@ -66,6 +81,7 @@ class AuthControllerTest {
         }.andExpect {
             status { isCreated() }
             jsonPath("$.accessToken") { value("access-token") }
+            jsonPath("$.isProfileComplete") { value(true) }
         }
     }
 
@@ -142,6 +158,72 @@ class AuthControllerTest {
         mockMvc.post("/api/auth/login") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(LoginRequest("test@example.com", "wrong"))
+        }.andExpect {
+            status { isUnauthorized() }
+        }
+    }
+
+    @Test
+    fun `POST google - 성공 시 200 반환`() {
+        val request = GoogleLoginRequest("valid-google-id-token")
+        given(authService.googleLogin(request)).willReturn(incompleteTokens)
+
+        mockMvc.post("/api/auth/google") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.accessToken") { value("access-token") }
+            jsonPath("$.isProfileComplete") { value(false) }
+        }
+    }
+
+    @Test
+    fun `POST google - 유효하지 않은 토큰 시 401 반환`() {
+        val request = GoogleLoginRequest("invalid-token")
+        given(authService.googleLogin(request)).willThrow(ApiException(ErrorCode.INVALID_GOOGLE_TOKEN))
+
+        mockMvc.post("/api/auth/google") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isUnauthorized() }
+        }
+    }
+
+    @Test
+    fun `POST google - LOCAL 계정 이메일 충돌 시 409 반환`() {
+        val request = GoogleLoginRequest("conflicting-token")
+        given(authService.googleLogin(request)).willThrow(ApiException(ErrorCode.EMAIL_ALREADY_REGISTERED))
+
+        mockMvc.post("/api/auth/google") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isConflict() }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "2")
+    fun `POST complete-profile - 성공 시 200 반환`() {
+        val request = validCompleteProfileRequest()
+        given(authService.completeProfile(2L, request)).willReturn(tokens)
+
+        mockMvc.post("/api/auth/complete-profile") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.isProfileComplete") { value(true) }
+        }
+    }
+
+    @Test
+    fun `POST complete-profile - 인증 없이 접근 시 401 반환`() {
+        mockMvc.post("/api/auth/complete-profile") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(validCompleteProfileRequest())
         }.andExpect {
             status { isUnauthorized() }
         }
