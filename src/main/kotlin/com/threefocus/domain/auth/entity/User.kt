@@ -13,26 +13,47 @@ class User(
     @Column(nullable = false, unique = true)
     val email: String,
 
-    @Column(nullable = false)
-    var password: String,
+    @Column(nullable = true)
+    var password: String? = null,
 
     @Column(nullable = false)
     val name: String,
 
-    @Column(nullable = false)
-    val phone: String,
+    @Column(nullable = true)
+    var phone: String? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    var gender: Gender? = null,
+
+    @Column(nullable = true)
+    var birthday: LocalDate? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val gender: Gender,
+    val provider: AuthProvider = AuthProvider.LOCAL,
+
+    @Column(nullable = true)
+    val providerId: String? = null,
 
     @Column(nullable = false)
-    val birthday: LocalDate,
+    var isProfileComplete: Boolean = false,
 
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
-)
+) {
+    fun completeProfile(phone: String, gender: Gender, birthday: LocalDate) {
+        this.phone = phone
+        this.gender = gender
+        this.birthday = birthday
+        this.isProfileComplete = true
+    }
+}
 
 enum class Gender {
     MALE, FEMALE
+}
+
+enum class AuthProvider {
+    LOCAL, GOOGLE
 }

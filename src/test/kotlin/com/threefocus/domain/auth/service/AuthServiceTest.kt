@@ -1,9 +1,12 @@
 package com.threefocus.domain.auth.service
 
+import com.threefocus.domain.auth.dto.CompleteProfileRequest
+import com.threefocus.domain.auth.dto.GoogleLoginRequest
 import com.threefocus.domain.auth.dto.LoginRequest
 import com.threefocus.domain.auth.dto.RefreshRequest
 import com.threefocus.domain.auth.dto.SignUpRequest
 import com.threefocus.domain.auth.dto.TermAgreementRequest
+import com.threefocus.domain.auth.entity.AuthProvider
 import com.threefocus.domain.auth.entity.Gender
 import com.threefocus.domain.auth.entity.User
 import com.threefocus.domain.auth.repository.UserQueryRepository
@@ -14,6 +17,8 @@ import com.threefocus.domain.term.repository.TermRepository
 import com.threefocus.domain.term.repository.UserTermRepository
 import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
+import com.threefocus.global.security.GoogleTokenVerifier
+import com.threefocus.global.security.GoogleUserInfo
 import com.threefocus.global.security.JwtTokenProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -36,6 +41,7 @@ class AuthServiceTest {
     @Mock private lateinit var userTermRepository: UserTermRepository
     @Mock private lateinit var passwordEncoder: PasswordEncoder
     @Mock private lateinit var jwtTokenProvider: JwtTokenProvider
+    @Mock private lateinit var googleTokenVerifier: GoogleTokenVerifier
 
     @InjectMocks private lateinit var authService: AuthService
 
@@ -47,6 +53,17 @@ class AuthServiceTest {
         phone = "010-1234-5678",
         gender = Gender.MALE,
         birthday = LocalDate.of(1990, 1, 1),
+        provider = AuthProvider.LOCAL,
+        isProfileComplete = true,
+    )
+
+    private val googleUser = User(
+        id = 2L,
+        email = "google@example.com",
+        name = "구글 사용자",
+        provider = AuthProvider.GOOGLE,
+        providerId = "google-sub-123",
+        isProfileComplete = false,
     )
 
     private val requiredTerms = listOf(
@@ -73,6 +90,17 @@ class AuthServiceTest {
         termAgreements = termAgreements,
     )
 
+    private fun completeProfileRequest() = CompleteProfileRequest(
+        phone = "010-9999-8888",
+        gender = Gender.FEMALE,
+        birthday = LocalDate.of(1995, 6, 15),
+        termAgreements = listOf(
+            TermAgreementRequest(TermType.SERVICE_TERMS, true),
+            TermAgreementRequest(TermType.PRIVACY_POLICY, true),
+            TermAgreementRequest(TermType.MARKETING, false),
+        ),
+    )
+
     @Test
     fun `signUp - 성공 시 토큰 반환`() {
         given(userQueryRepository.existsByEmail("test@example.com")).willReturn(false)
@@ -80,7 +108,6 @@ class AuthServiceTest {
         given(termRepository.findAll()).willReturn(allTerms)
         given(passwordEncoder.encode("password123")).willReturn("encoded_pw")
         given(userRepository.save(any())).willReturn(savedUser)
-        given(userTermRepository.save(any())).willReturn(any())
         given(jwtTokenProvider.generateAccessToken(1L)).willReturn("access-token")
         given(jwtTokenProvider.generateRefreshToken(1L)).willReturn("refresh-token")
 
@@ -88,6 +115,7 @@ class AuthServiceTest {
 
         assertThat(result.accessToken).isEqualTo("access-token")
         assertThat(result.refreshToken).isEqualTo("refresh-token")
+        assertThat(result.isProfileComplete).isTrue()
     }
 
     @Test
@@ -155,6 +183,7 @@ class AuthServiceTest {
     fun `refresh - 유효한 리프레시 토큰으로 새 토큰 반환`() {
         given(jwtTokenProvider.isRefreshToken("valid-refresh")).willReturn(true)
         given(jwtTokenProvider.getUserId("valid-refresh")).willReturn(1L)
+        given(userQueryRepository.findById(1L)).willReturn(savedUser)
         given(jwtTokenProvider.generateAccessToken(1L)).willReturn("new-access")
         given(jwtTokenProvider.generateRefreshToken(1L)).willReturn("new-refresh")
 
@@ -172,5 +201,74 @@ class AuthServiceTest {
         }
 
         assertThat(ex.errorCode).isEqualTo(ErrorCode.INVALID_TOKEN)
+    }
+
+    @Test
+    fun `googleLogin - 기존 Google 계정 로그인 성공`() {
+        val googleInfo = GoogleUserInfo("google-sub-123", "google@example.com", "구글 사용자", true)
+        given(googleTokenVerifier.verify("google-id-token")).willReturn(googleInfo)
+        given(userQueryRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, "google-sub-123")).willReturn(googleUser)
+        given(jwtTokenProvider.generateAccessToken(2L)).willReturn("access-token")
+        given(jwtTokenProvider.generateRefreshToken(2L)).willReturn("refresh-token")
+
+        val result = authService.googleLogin(GoogleLoginRequest("google-id-token"))
+
+        assertThat(result.accessToken).isEqualTo("access-token")
+        assertThat(result.isProfileComplete).isFalse()
+    }
+
+    @Test
+    fun `googleLogin - 신규 Google 계정 가입 후 isProfileComplete false 반환`() {
+        val googleInfo = GoogleUserInfo("new-sub-456", "new@example.com", "신규 사용자", true)
+        val newGoogleUser = User(id = 3L, email = "new@example.com", name = "신규 사용자", provider = AuthProvider.GOOGLE, providerId = "new-sub-456", isProfileComplete = false)
+        given(googleTokenVerifier.verify("new-id-token")).willReturn(googleInfo)
+        given(userQueryRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, "new-sub-456")).willReturn(null)
+        given(userQueryRepository.findByEmail("new@example.com")).willReturn(null)
+        given(userRepository.save(any())).willReturn(newGoogleUser)
+        given(jwtTokenProvider.generateAccessToken(3L)).willReturn("access-token")
+        given(jwtTokenProvider.generateRefreshToken(3L)).willReturn("refresh-token")
+
+        val result = authService.googleLogin(GoogleLoginRequest("new-id-token"))
+
+        assertThat(result.isProfileComplete).isFalse()
+    }
+
+    @Test
+    fun `googleLogin - 동일 이메일이 LOCAL 계정으로 가입되어 있으면 EMAIL_ALREADY_REGISTERED 예외`() {
+        val googleInfo = GoogleUserInfo("sub-999", "test@example.com", "홍길동", true)
+        given(googleTokenVerifier.verify("id-token")).willReturn(googleInfo)
+        given(userQueryRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, "sub-999")).willReturn(null)
+        given(userQueryRepository.findByEmail("test@example.com")).willReturn(savedUser)
+
+        val ex = assertThrows<ApiException> {
+            authService.googleLogin(GoogleLoginRequest("id-token"))
+        }
+
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.EMAIL_ALREADY_REGISTERED)
+    }
+
+    @Test
+    fun `completeProfile - 성공 시 isProfileComplete true 반환`() {
+        given(userQueryRepository.findById(2L)).willReturn(googleUser)
+        given(termRepository.findAllByIsRequired(true)).willReturn(requiredTerms)
+        given(termRepository.findAll()).willReturn(allTerms)
+        given(userRepository.save(any())).willReturn(googleUser)
+        given(jwtTokenProvider.generateAccessToken(2L)).willReturn("access-token")
+        given(jwtTokenProvider.generateRefreshToken(2L)).willReturn("refresh-token")
+
+        val result = authService.completeProfile(2L, completeProfileRequest())
+
+        assertThat(result.isProfileComplete).isTrue()
+    }
+
+    @Test
+    fun `completeProfile - 이미 완성된 프로필이면 PROFILE_ALREADY_COMPLETE 예외`() {
+        given(userQueryRepository.findById(1L)).willReturn(savedUser)
+
+        val ex = assertThrows<ApiException> {
+            authService.completeProfile(1L, completeProfileRequest())
+        }
+
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.PROFILE_ALREADY_COMPLETE)
     }
 }
