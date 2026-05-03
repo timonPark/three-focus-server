@@ -14,14 +14,14 @@ data class Top3Response(
     val id: Long,
     val todoId: Long,
     val date: LocalDate,
-    val orderIndex: Int,
+    val order: Int,
 ) {
     companion object {
         fun from(top3: Top3) = Top3Response(
             id = top3.id,
             todoId = top3.todoId,
             date = top3.date,
-            orderIndex = top3.orderIndex,
+            order = top3.orderIndex,
         )
     }
 }

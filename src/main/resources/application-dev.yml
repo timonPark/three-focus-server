@@ -20,3 +20,6 @@ jwt:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}

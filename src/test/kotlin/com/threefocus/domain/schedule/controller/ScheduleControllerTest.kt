@@ -41,16 +41,36 @@ class ScheduleControllerTest {
     @Test
     @WithMockUser(username = "10")
     fun `PUT schedules - 시간 배치 성공 시 200 반환`() {
-        val response = ScheduleResponse(id = 1L, todoId = 1L, startTime = LocalTime.of(7, 0))
+        val response = ScheduleResponse(id = 1L, todoId = 1L, date = today, startTime = LocalTime.of(7, 0), endTime = null)
         given(scheduleService.assign(eq(10L), any())).willReturn(response)
 
         mockMvc.put("/api/schedules") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(AssignScheduleRequest(1L, LocalTime.of(7, 0)))
+            content = objectMapper.writeValueAsString(
+                AssignScheduleRequest(todoId = 1L, date = today, startTime = LocalTime.of(7, 0))
+            )
         }.andExpect {
             status { isOk() }
             jsonPath("$.todoId") { value(1) }
             jsonPath("$.startTime") { value("07:00:00") }
+            jsonPath("$.date") { value("2026-04-30") }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "10")
+    fun `PUT schedules - endTime 포함 시간 배치 성공`() {
+        val response = ScheduleResponse(id = 1L, todoId = 1L, date = today, startTime = LocalTime.of(9, 0), endTime = LocalTime.of(10, 30))
+        given(scheduleService.assign(eq(10L), any())).willReturn(response)
+
+        mockMvc.put("/api/schedules") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(
+                AssignScheduleRequest(todoId = 1L, date = today, startTime = LocalTime.of(9, 0), endTime = LocalTime.of(10, 30))
+            )
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.endTime") { value("10:30:00") }
         }
     }
 
@@ -80,7 +100,9 @@ class ScheduleControllerTest {
     fun `PUT schedules - 인증 없으면 401 반환`() {
         mockMvc.put("/api/schedules") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(AssignScheduleRequest(1L, LocalTime.of(7, 0)))
+            content = objectMapper.writeValueAsString(
+                AssignScheduleRequest(todoId = 1L, startTime = LocalTime.of(7, 0))
+            )
         }.andExpect {
             status { isUnauthorized() }
         }

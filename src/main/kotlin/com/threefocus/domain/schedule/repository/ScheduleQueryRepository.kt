@@ -48,6 +48,8 @@ class ScheduleQueryRepository(private val dsl: DSLContext) {
     private fun mapToSchedule(record: Record) = Schedule(
         id = record.get("id", Long::class.java),
         todoId = record.get("todo_id", Long::class.java),
+        date = record.get("date", LocalDate::class.java),
         startTime = record.get("start_time", LocalTime::class.java),
+        endTime = record.get("end_time", LocalTime::class.java),
     )
 }

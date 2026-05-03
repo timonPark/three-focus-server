@@ -228,4 +228,50 @@ class AuthControllerTest {
             status { isUnauthorized() }
         }
     }
+
+    @Test
+    @WithMockUser(username = "1")
+    fun `POST complete-profile - 이미 완성된 프로필이면 400 반환`() {
+        val request = validCompleteProfileRequest()
+        given(authService.completeProfile(1L, request)).willThrow(ApiException(ErrorCode.PROFILE_ALREADY_COMPLETE))
+
+        mockMvc.post("/api/auth/complete-profile") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "2")
+    fun `POST complete-profile - 필수 약관 미동의 시 400 반환`() {
+        val request = validCompleteProfileRequest()
+        given(authService.completeProfile(2L, request)).willThrow(ApiException(ErrorCode.REQUIRED_TERMS_NOT_AGREED))
+
+        mockMvc.post("/api/auth/complete-profile") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "2")
+    fun `POST complete-profile - 전화번호 누락 시 400 반환`() {
+        val invalidRequest = CompleteProfileRequest(
+            phone = "",
+            gender = Gender.FEMALE,
+            birthday = LocalDate.of(1995, 6, 15),
+            termAgreements = listOf(TermAgreementRequest(TermType.SERVICE_TERMS, true)),
+        )
+
+        mockMvc.post("/api/auth/complete-profile") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(invalidRequest)
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
 }

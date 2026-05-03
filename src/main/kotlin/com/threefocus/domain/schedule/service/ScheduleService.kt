@@ -30,7 +30,9 @@ class ScheduleService(
             Schedule(
                 id = existing?.id ?: 0,
                 todoId = request.todoId,
+                date = todo.date,
                 startTime = request.startTime!!,
+                endTime = request.endTime,
             )
         )
         return ScheduleResponse.from(schedule)

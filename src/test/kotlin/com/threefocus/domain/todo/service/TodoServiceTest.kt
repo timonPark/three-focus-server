@@ -6,6 +6,7 @@ import com.threefocus.domain.todo.dto.UpdateTodoRequest
 import com.threefocus.domain.todo.entity.Todo
 import com.threefocus.domain.todo.repository.TodoQueryRepository
 import com.threefocus.domain.todo.repository.TodoRepository
+import com.threefocus.domain.top3.repository.Top3QueryRepository
 import com.threefocus.domain.top3.repository.Top3Repository
 import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
@@ -28,6 +29,7 @@ class TodoServiceTest {
     @Mock private lateinit var todoQueryRepository: TodoQueryRepository
     @Mock private lateinit var scheduleRepository: ScheduleRepository
     @Mock private lateinit var top3Repository: Top3Repository
+    @Mock private lateinit var top3QueryRepository: Top3QueryRepository
 
     @InjectMocks private lateinit var todoService: TodoService
 
@@ -41,17 +43,20 @@ class TodoServiceTest {
         val result = todoService.create(10L, CreateTodoRequest("운동하기", today))
 
         assertThat(result.title).isEqualTo("운동하기")
-        assertThat(result.isCompleted).isFalse()
+        assertThat(result.completed).isFalse()
+        assertThat(result.isTop3).isFalse()
     }
 
     @Test
     fun `getByDate - 해당 날짜의 할 일 목록 반환`() {
         given(todoQueryRepository.findAllByUserIdAndDate(10L, today)).willReturn(listOf(todo))
+        given(top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(10L, today)).willReturn(emptyList())
 
         val result = todoService.getByDate(10L, today)
 
         assertThat(result).hasSize(1)
         assertThat(result[0].title).isEqualTo("운동하기")
+        assertThat(result[0].isTop3).isFalse()
     }
 
     @Test
@@ -59,11 +64,12 @@ class TodoServiceTest {
         val updated = Todo(id = 1L, userId = 10L, title = "독서하기", isCompleted = true, date = today)
         given(todoQueryRepository.findById(1L)).willReturn(todo)
         given(todoRepository.save(any())).willReturn(updated)
+        given(top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(10L, today)).willReturn(emptyList())
 
-        val result = todoService.update(10L, 1L, UpdateTodoRequest(title = "독서하기", isCompleted = true))
+        val result = todoService.update(10L, 1L, UpdateTodoRequest(title = "독서하기", completed = true))
 
         assertThat(result.title).isEqualTo("독서하기")
-        assertThat(result.isCompleted).isTrue()
+        assertThat(result.completed).isTrue()
     }
 
     @Test

@@ -15,7 +15,7 @@ class CustomUserDetailsService(private val userQueryRepository: UserQueryReposit
         val user = userQueryRepository.findById(username.toLong())
             ?: throw ApiException(ErrorCode.UNAUTHORIZED)
         return User.withUsername(user.id.toString())
-            .password(user.password)
+            .password(user.password ?: "")
             .roles("USER")
             .build()
     }

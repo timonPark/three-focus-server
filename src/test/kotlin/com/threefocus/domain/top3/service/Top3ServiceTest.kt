@@ -89,7 +89,7 @@ class Top3ServiceTest {
         val result = top3Service.getTop3(userId, today)
 
         assertThat(result).hasSize(2)
-        assertThat(result[0].orderIndex).isEqualTo(1)
-        assertThat(result[1].orderIndex).isEqualTo(2)
+        assertThat(result[0].order).isEqualTo(1)
+        assertThat(result[1].order).isEqualTo(2)
     }
 }

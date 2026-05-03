@@ -41,7 +41,9 @@ class TodoControllerTest {
 
     private val today = LocalDate.of(2026, 4, 30)
     private val todoResponse = TodoResponse(
-        id = 1L, title = "운동하기", isCompleted = false, date = today, createdAt = LocalDateTime.now()
+        id = 1L, title = "운동하기", memo = null, estimatedMinutes = null,
+        date = today, completed = false, isTop3 = false, top3Order = null,
+        createdAt = LocalDateTime.now()
     )
 
     @Test
@@ -55,7 +57,8 @@ class TodoControllerTest {
         }.andExpect {
             status { isCreated() }
             jsonPath("$.title") { value("운동하기") }
-            jsonPath("$.isCompleted") { value(false) }
+            jsonPath("$.completed") { value(false) }
+            jsonPath("$.isTop3") { value(false) }
         }
     }
 
@@ -107,16 +110,16 @@ class TodoControllerTest {
     @Test
     @WithMockUser(username = "10")
     fun `PUT todos-id - 수정 성공 시 200 반환`() {
-        val updated = todoResponse.copy(title = "독서하기", isCompleted = true)
+        val updated = todoResponse.copy(title = "독서하기", completed = true)
         given(todoService.update(eq(10L), eq(1L), any())).willReturn(updated)
 
         mockMvc.put("/api/todos/1") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(UpdateTodoRequest(title = "독서하기", isCompleted = true))
+            content = objectMapper.writeValueAsString(UpdateTodoRequest(title = "독서하기", completed = true))
         }.andExpect {
             status { isOk() }
             jsonPath("$.title") { value("독서하기") }
-            jsonPath("$.isCompleted") { value(true) }
+            jsonPath("$.completed") { value(true) }
         }
     }
 

@@ -1,3 +1,39 @@
+# ThreeFocus Server Project Rules
+
+## Work History Tracking
+
+모든 작업 세션이 끝날 때마다 `work-history/YYYY-MM-DD.md`를 생성하거나 업데이트한다. 날짜는 `currentDate` 컨텍스트를 사용한다.
+
+**파일 구조:**
+```markdown
+# Work History — YYYY-MM-DD
+
+## 컨텍스트
+사용자 요청 요약
+
+## 작업 내역
+구현한 내용과 파일 경로
+
+## API 변경 사항
+추가/변경된 API (Method, URL, Request/Response 구조)
+
+## DB 변경 사항
+추가된 마이그레이션 파일 내용
+
+## 테스트
+추가/수정된 테스트 파일
+
+## 다음 세션 참고사항
+미해결 이슈, 알려진 문제, 다음에 해야 할 것
+```
+
+**규칙:**
+- 같은 날짜에 여러 세션이 있으면 동일 파일에 누적 추가
+- API 경로, 요청/응답 구조의 변경사항은 반드시 기록
+- 엔티티 구조 변경 시 업데이트된 구조를 간략히 기록
+
+---
+
 # Claude Skills Project Configuration
 
 > This file governs Claude's behavior when working on the claude-skills repository.

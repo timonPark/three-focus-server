@@ -22,6 +22,12 @@ class Todo(
     @Column(nullable = false)
     val date: LocalDate,
 
+    @Column(nullable = true)
+    var memo: String? = null,
+
+    @Column(nullable = true)
+    var estimatedMinutes: Int? = null,
+
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 )
