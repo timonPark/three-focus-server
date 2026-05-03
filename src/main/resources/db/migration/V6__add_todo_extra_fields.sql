@@ -1,0 +1,2 @@
+ALTER TABLE todos ADD COLUMN memo VARCHAR(500);
+ALTER TABLE todos ADD COLUMN estimated_minutes INT;

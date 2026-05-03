@@ -34,7 +34,7 @@ class ScheduleServiceTest {
     private val userId = 10L
     private val today = LocalDate.of(2026, 4, 30)
     private val todo = Todo(id = 1L, userId = userId, title = "운동", date = today)
-    private val schedule = Schedule(id = 5L, todoId = 1L, startTime = LocalTime.of(7, 0))
+    private val schedule = Schedule(id = 5L, todoId = 1L, date = today, startTime = LocalTime.of(7, 0))
 
     @Test
     fun `assign - 신규 시간 배치 성공`() {
@@ -42,23 +42,36 @@ class ScheduleServiceTest {
         given(scheduleQueryRepository.findByTodoId(1L)).willReturn(null)
         given(scheduleRepository.save(any())).willReturn(schedule)
 
-        val result = scheduleService.assign(userId, AssignScheduleRequest(1L, LocalTime.of(7, 0)))
+        val result = scheduleService.assign(userId, AssignScheduleRequest(todoId = 1L, startTime = LocalTime.of(7, 0)))
 
         assertThat(result.todoId).isEqualTo(1L)
         assertThat(result.startTime).isEqualTo(LocalTime.of(7, 0))
+        assertThat(result.date).isEqualTo(today)
     }
 
     @Test
     fun `assign - 기존 시간 배치 수정(upsert) 성공`() {
-        val existing = Schedule(id = 5L, todoId = 1L, startTime = LocalTime.of(6, 0))
-        val updated = Schedule(id = 5L, todoId = 1L, startTime = LocalTime.of(9, 0))
+        val existing = Schedule(id = 5L, todoId = 1L, date = today, startTime = LocalTime.of(6, 0))
+        val updated = Schedule(id = 5L, todoId = 1L, date = today, startTime = LocalTime.of(9, 0))
         given(todoQueryRepository.findById(1L)).willReturn(todo)
         given(scheduleQueryRepository.findByTodoId(1L)).willReturn(existing)
         given(scheduleRepository.save(any())).willReturn(updated)
 
-        val result = scheduleService.assign(userId, AssignScheduleRequest(1L, LocalTime.of(9, 0)))
+        val result = scheduleService.assign(userId, AssignScheduleRequest(todoId = 1L, startTime = LocalTime.of(9, 0)))
 
         assertThat(result.startTime).isEqualTo(LocalTime.of(9, 0))
+    }
+
+    @Test
+    fun `assign - endTime 포함 배치 성공`() {
+        val scheduleWithEnd = Schedule(id = 5L, todoId = 1L, date = today, startTime = LocalTime.of(9, 0), endTime = LocalTime.of(10, 30))
+        given(todoQueryRepository.findById(1L)).willReturn(todo)
+        given(scheduleQueryRepository.findByTodoId(1L)).willReturn(null)
+        given(scheduleRepository.save(any())).willReturn(scheduleWithEnd)
+
+        val result = scheduleService.assign(userId, AssignScheduleRequest(todoId = 1L, startTime = LocalTime.of(9, 0), endTime = LocalTime.of(10, 30)))
+
+        assertThat(result.endTime).isEqualTo(LocalTime.of(10, 30))
     }
 
     @Test
@@ -66,7 +79,7 @@ class ScheduleServiceTest {
         given(todoQueryRepository.findById(99L)).willReturn(null)
 
         val ex = assertThrows<ApiException> {
-            scheduleService.assign(userId, AssignScheduleRequest(99L, LocalTime.of(7, 0)))
+            scheduleService.assign(userId, AssignScheduleRequest(todoId = 99L, startTime = LocalTime.of(7, 0)))
         }
 
         assertThat(ex.errorCode).isEqualTo(ErrorCode.TODO_NOT_FOUND)
@@ -77,7 +90,7 @@ class ScheduleServiceTest {
         given(todoQueryRepository.findById(1L)).willReturn(todo)
 
         val ex = assertThrows<ApiException> {
-            scheduleService.assign(99L, AssignScheduleRequest(1L, LocalTime.of(7, 0)))
+            scheduleService.assign(99L, AssignScheduleRequest(todoId = 1L, startTime = LocalTime.of(7, 0)))
         }
 
         assertThat(ex.errorCode).isEqualTo(ErrorCode.FORBIDDEN)

@@ -63,7 +63,7 @@ class ShareServiceTest {
         given(todoQueryRepository.findById(1L)).willReturn(todo1)
         given(todoQueryRepository.findById(2L)).willReturn(todo2)
         given(scheduleQueryRepository.findByTodoId(1L)).willReturn(
-            com.threefocus.domain.schedule.entity.Schedule(todoId = 1L, startTime = LocalTime.of(7, 0))
+            com.threefocus.domain.schedule.entity.Schedule(todoId = 1L, date = today, startTime = LocalTime.of(7, 0))
         )
         given(scheduleQueryRepository.findByTodoId(2L)).willReturn(null)
 

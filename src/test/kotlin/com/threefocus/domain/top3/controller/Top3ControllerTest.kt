@@ -35,8 +35,8 @@ class Top3ControllerTest {
 
     private val today = LocalDate.of(2026, 4, 30)
     private val top3Response = listOf(
-        Top3Response(id = 1L, todoId = 1L, date = today, orderIndex = 1),
-        Top3Response(id = 2L, todoId = 2L, date = today, orderIndex = 2),
+        Top3Response(id = 1L, todoId = 1L, date = today, order = 1),
+        Top3Response(id = 2L, todoId = 2L, date = today, order = 2),
     )
 
     @Test
@@ -49,8 +49,8 @@ class Top3ControllerTest {
             content = objectMapper.writeValueAsString(SetTop3Request(listOf(1L, 2L), today))
         }.andExpect {
             status { isOk() }
-            jsonPath("$[0].orderIndex") { value(1) }
-            jsonPath("$[1].orderIndex") { value(2) }
+            jsonPath("$[0].order") { value(1) }
+            jsonPath("$[1].order") { value(2) }
         }
     }
 

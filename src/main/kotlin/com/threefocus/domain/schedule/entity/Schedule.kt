@@ -1,6 +1,7 @@
 package com.threefocus.domain.schedule.entity
 
 import jakarta.persistence.*
+import java.time.LocalDate
 import java.time.LocalTime
 
 @Entity
@@ -13,5 +14,11 @@ class Schedule(
     val todoId: Long,
 
     @Column(nullable = false)
+    var date: LocalDate,
+
+    @Column(nullable = false)
     var startTime: LocalTime,
+
+    @Column(nullable = true)
+    var endTime: LocalTime? = null,
 )

@@ -7,6 +7,7 @@ import com.threefocus.domain.todo.dto.UpdateTodoRequest
 import com.threefocus.domain.todo.entity.Todo
 import com.threefocus.domain.todo.repository.TodoQueryRepository
 import com.threefocus.domain.todo.repository.TodoRepository
+import com.threefocus.domain.top3.repository.Top3QueryRepository
 import com.threefocus.domain.top3.repository.Top3Repository
 import com.threefocus.global.exception.ApiException
 import com.threefocus.global.exception.ErrorCode
@@ -20,16 +21,31 @@ class TodoService(
     private val todoQueryRepository: TodoQueryRepository,
     private val scheduleRepository: ScheduleRepository,
     private val top3Repository: Top3Repository,
+    private val top3QueryRepository: Top3QueryRepository,
 ) {
     @Transactional
     fun create(userId: Long, request: CreateTodoRequest): TodoResponse {
-        val todo = todoRepository.save(Todo(userId = userId, title = request.title, date = request.date!!))
+        val todo = todoRepository.save(
+            Todo(
+                userId = userId,
+                title = request.title,
+                date = request.date!!,
+                memo = request.memo,
+                estimatedMinutes = request.estimatedMinutes,
+            )
+        )
         return TodoResponse.from(todo)
     }
 
     @Transactional(readOnly = true)
-    fun getByDate(userId: Long, date: LocalDate): List<TodoResponse> =
-        todoQueryRepository.findAllByUserIdAndDate(userId, date).map { TodoResponse.from(it) }
+    fun getByDate(userId: Long, date: LocalDate): List<TodoResponse> {
+        val todos = todoQueryRepository.findAllByUserIdAndDate(userId, date)
+        val top3Map = top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(userId, date)
+            .associate { it.todoId to it.orderIndex }
+        return todos.map { todo ->
+            TodoResponse.from(todo, isTop3 = top3Map.containsKey(todo.id), top3Order = top3Map[todo.id])
+        }
+    }
 
     @Transactional
     fun update(userId: Long, todoId: Long, request: UpdateTodoRequest): TodoResponse {
@@ -39,12 +55,16 @@ class TodoService(
                 id = todo.id,
                 userId = todo.userId,
                 title = request.title ?: todo.title,
-                isCompleted = request.isCompleted ?: todo.isCompleted,
+                isCompleted = request.completed ?: todo.isCompleted,
                 date = todo.date,
+                memo = request.memo ?: todo.memo,
+                estimatedMinutes = request.estimatedMinutes ?: todo.estimatedMinutes,
                 createdAt = todo.createdAt,
             )
         )
-        return TodoResponse.from(updated)
+        val top3 = top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(userId, todo.date)
+            .find { it.todoId == todoId }
+        return TodoResponse.from(updated, isTop3 = top3 != null, top3Order = top3?.orderIndex)
     }
 
     @Transactional

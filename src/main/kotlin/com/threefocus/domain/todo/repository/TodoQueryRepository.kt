@@ -33,6 +33,8 @@ class TodoQueryRepository(private val dsl: DSLContext) {
         title = record.get("title", String::class.java),
         isCompleted = record.get("is_completed", Boolean::class.java),
         date = record.get("date", LocalDate::class.java),
+        memo = record.get("memo", String::class.java),
+        estimatedMinutes = record.get("estimated_minutes", Int::class.javaObjectType),
         createdAt = record.get("created_at", LocalDateTime::class.java),
     )
 }
