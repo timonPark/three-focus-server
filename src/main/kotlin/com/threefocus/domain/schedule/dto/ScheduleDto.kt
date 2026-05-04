@@ -35,5 +35,7 @@ data class DailyScheduleItemResponse(
     val todoId: Long,
     val title: String,
     val isCompleted: Boolean,
+    val date: LocalDate,
     val startTime: LocalTime?,
+    val endTime: LocalTime?,
 )
