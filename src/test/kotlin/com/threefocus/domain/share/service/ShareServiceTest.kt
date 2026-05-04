@@ -1,5 +1,6 @@
 package com.threefocus.domain.share.service
 
+import com.threefocus.domain.schedule.entity.Schedule
 import com.threefocus.domain.schedule.repository.ScheduleQueryRepository
 import com.threefocus.domain.share.dto.CreateShareRequest
 import com.threefocus.domain.share.entity.Share
@@ -50,31 +51,45 @@ class ShareServiceTest {
     }
 
     @Test
-    fun `getShare - 성공 시 Top3 항목과 스케줄 포함한 응답 반환`() {
+    fun `getShare - 성공 시 todos, top3Data, schedules 포함한 응답 반환`() {
         val top3List = listOf(
             Top3(id = 1L, userId = userId, todoId = 1L, date = today, orderIndex = 1),
             Top3(id = 2L, userId = userId, todoId = 2L, date = today, orderIndex = 2),
         )
         val todo1 = Todo(id = 1L, userId = userId, title = "운동", isCompleted = true, date = today)
-        val todo2 = Todo(id = 2L, userId = userId, title = "독서", date = today)
+        val todo2 = Todo(id = 2L, userId = userId, title = "독서", isCompleted = false, date = today)
+        val todos = listOf(todo1, todo2)
+
+        val schedules = listOf(
+            Schedule(id = 10L, todoId = 1L, date = today, startTime = LocalTime.of(7, 0), endTime = LocalTime.of(8, 0)),
+        )
 
         given(shareQueryRepository.findByShareToken(token)).willReturn(share)
         given(top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(userId, today)).willReturn(top3List)
-        given(todoQueryRepository.findById(1L)).willReturn(todo1)
-        given(todoQueryRepository.findById(2L)).willReturn(todo2)
-        given(scheduleQueryRepository.findByTodoId(1L)).willReturn(
-            com.threefocus.domain.schedule.entity.Schedule(todoId = 1L, date = today, startTime = LocalTime.of(7, 0))
-        )
-        given(scheduleQueryRepository.findByTodoId(2L)).willReturn(null)
+        given(todoQueryRepository.findAllByUserIdAndDate(userId, today)).willReturn(todos)
+        given(scheduleQueryRepository.findAllByTodoIds(listOf(1L, 2L))).willReturn(schedules)
 
         val result = shareService.getShare(token)
 
         assertThat(result.shareToken).isEqualTo(token)
-        assertThat(result.top3).hasSize(2)
-        assertThat(result.top3[0].title).isEqualTo("운동")
-        assertThat(result.top3[0].isCompleted).isTrue()
-        assertThat(result.top3[0].startTime).isEqualTo(LocalTime.of(7, 0))
-        assertThat(result.top3[1].startTime).isNull()
+
+        assertThat(result.todos).hasSize(2)
+        assertThat(result.todos[0].title).isEqualTo("운동")
+        assertThat(result.todos[0].completed).isTrue()
+        assertThat(result.todos[0].isTop3).isTrue()
+        assertThat(result.todos[0].top3Order).isEqualTo(1)
+        assertThat(result.todos[1].isTop3).isTrue()
+        assertThat(result.todos[1].top3Order).isEqualTo(2)
+
+        assertThat(result.top3Data).hasSize(2)
+        assertThat(result.top3Data[0].order).isEqualTo(1)
+        assertThat(result.top3Data[0].todoId).isEqualTo(1L)
+        assertThat(result.top3Data[1].order).isEqualTo(2)
+
+        assertThat(result.schedules).hasSize(1)
+        assertThat(result.schedules[0].todoId).isEqualTo(1L)
+        assertThat(result.schedules[0].startTime).isEqualTo(LocalTime.of(7, 0))
+        assertThat(result.schedules[0].endTime).isEqualTo(LocalTime.of(8, 0))
     }
 
     @Test

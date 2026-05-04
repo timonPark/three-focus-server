@@ -78,13 +78,15 @@ class ShareControllerTest {
 
     @Test
     fun `GET shares-token - 인증 없이 공유 일정 조회 성공 시 200 반환`() {
-        val response = SharedScheduleResponse(shareToken = token, date = today, top3 = emptyList())
+        val response = SharedScheduleResponse(shareToken = token, date = today, todos = emptyList(), top3Data = emptyList(), schedules = emptyList())
         given(shareService.getShare(token)).willReturn(response)
 
         mockMvc.get("/api/shares/$token").andExpect {
             status { isOk() }
             jsonPath("$.shareToken") { value(token) }
-            jsonPath("$.top3") { isArray() }
+            jsonPath("$.todos") { isArray() }
+            jsonPath("$.top3Data") { isArray() }
+            jsonPath("$.schedules") { isArray() }
         }
     }
 

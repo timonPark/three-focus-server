@@ -65,6 +65,8 @@ src/main/kotlin/com/threefocus
 
 > 스키마 변경 시 `er-diagram.drawio`를 수정 후 SVG를 재내보내기 해주세요.
 > draw.io 앱에서 파일을 열고 **File → Export As → SVG**로 `er-diagram.drawio.svg`를 덮어쓰면 됩니다.
+>
+> **현재 반영된 마이그레이션:** V1 ~ V7
 
 ## API 목록
 
@@ -86,6 +88,10 @@ src/main/kotlin/com/threefocus
 | 시간 배치 | DELETE | `/api/schedules/{todoId}` | 시간 배치 취소 | O |
 | 공유 | POST | `/api/shares` | 공유 링크 생성 | O |
 | 공유 | GET | `/api/shares/{shareToken}` | 공유 일정 조회 | X |
+
+## 배포
+
+서버 배포는 **[Render](https://render.com)** 플랫폼을 사용합니다.
 
 ## 시작하기
 

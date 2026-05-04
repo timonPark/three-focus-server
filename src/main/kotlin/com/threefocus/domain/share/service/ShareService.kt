@@ -1,13 +1,15 @@
 package com.threefocus.domain.share.service
 
+import com.threefocus.domain.schedule.dto.ScheduleResponse
 import com.threefocus.domain.schedule.repository.ScheduleQueryRepository
 import com.threefocus.domain.share.dto.CreateShareRequest
 import com.threefocus.domain.share.dto.ShareResponse
 import com.threefocus.domain.share.dto.SharedScheduleResponse
-import com.threefocus.domain.share.dto.SharedTop3ItemResponse
+import com.threefocus.domain.share.dto.SharedTop3Response
 import com.threefocus.domain.share.entity.Share
 import com.threefocus.domain.share.repository.ShareQueryRepository
 import com.threefocus.domain.share.repository.ShareRepository
+import com.threefocus.domain.todo.dto.TodoResponse
 import com.threefocus.domain.todo.repository.TodoQueryRepository
 import com.threefocus.domain.top3.repository.Top3QueryRepository
 import com.threefocus.global.exception.ApiException
@@ -34,22 +36,29 @@ class ShareService(
         val share = shareQueryRepository.findByShareToken(shareToken)
             ?: throw ApiException(ErrorCode.NOT_FOUND)
 
-        val top3Items = top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(share.userId, share.date)
-        val items = top3Items.map { top3 ->
-            val todo = todoQueryRepository.findById(top3.todoId)!!
-            val schedule = scheduleQueryRepository.findByTodoId(top3.todoId)
-            SharedTop3ItemResponse(
-                orderIndex = top3.orderIndex,
-                title = todo.title,
-                isCompleted = todo.isCompleted,
-                startTime = schedule?.startTime,
-            )
+        val top3List = top3QueryRepository.findAllByUserIdAndDateOrderByOrderIndex(share.userId, share.date)
+        val top3ByTodoId = top3List.associateBy { it.todoId }
+
+        val todos = todoQueryRepository.findAllByUserIdAndDate(share.userId, share.date)
+        val scheduleByTodoId = scheduleQueryRepository
+            .findAllByTodoIds(todos.map { it.id })
+            .associateBy { it.todoId }
+
+        val todoResponses = todos.map { todo ->
+            val top3 = top3ByTodoId[todo.id]
+            TodoResponse.from(todo, isTop3 = top3 != null, top3Order = top3?.orderIndex)
         }
+
+        val scheduleResponses = scheduleByTodoId.values.map { ScheduleResponse.from(it) }
+
+        val top3Responses = top3List.map { SharedTop3Response.from(it) }
 
         return SharedScheduleResponse(
             shareToken = share.shareToken,
             date = share.date,
-            top3 = items,
+            todos = todoResponses,
+            schedules = scheduleResponses,
+            top3Data = top3Responses,
         )
     }
 }

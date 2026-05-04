@@ -1,10 +1,12 @@
 package com.threefocus.domain.share.dto
 
+import com.threefocus.domain.schedule.dto.ScheduleResponse
 import com.threefocus.domain.share.entity.Share
+import com.threefocus.domain.todo.dto.TodoResponse
+import com.threefocus.domain.top3.entity.Top3
 import jakarta.validation.constraints.NotNull
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 data class CreateShareRequest(
     @field:NotNull val date: LocalDate?,
@@ -29,12 +31,23 @@ data class ShareResponse(
 data class SharedScheduleResponse(
     val shareToken: String,
     val date: LocalDate,
-    val top3: List<SharedTop3ItemResponse>,
+    val todos: List<TodoResponse>,
+    val schedules: List<ScheduleResponse>,
+    val top3Data: List<SharedTop3Response>,
 )
 
-data class SharedTop3ItemResponse(
-    val orderIndex: Int,
-    val title: String,
-    val isCompleted: Boolean,
-    val startTime: LocalTime?,
-)
+data class SharedTop3Response(
+    val id: Long,
+    val todoId: Long,
+    val date: LocalDate,
+    val order: Int,
+) {
+    companion object {
+        fun from(top3: Top3) = SharedTop3Response(
+            id = top3.id,
+            todoId = top3.todoId,
+            date = top3.date,
+            order = top3.orderIndex,
+        )
+    }
+}
