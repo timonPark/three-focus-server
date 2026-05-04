@@ -12,6 +12,13 @@ import java.time.LocalTime
 @Repository
 class ScheduleQueryRepository(private val dsl: DSLContext) {
 
+    fun findAllByTodoIds(todoIds: List<Long>): List<Schedule> =
+        if (todoIds.isEmpty()) emptyList()
+        else dsl.select()
+            .from(DSL.table("schedules"))
+            .where(DSL.field("todo_id", Long::class.java).`in`(todoIds))
+            .fetch { mapToSchedule(it) }
+
     fun findByTodoId(todoId: Long): Schedule? =
         dsl.select()
             .from(DSL.table("schedules"))
