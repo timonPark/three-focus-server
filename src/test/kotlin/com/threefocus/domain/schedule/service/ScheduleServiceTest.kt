@@ -19,6 +19,7 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -47,6 +48,24 @@ class ScheduleServiceTest {
         assertThat(result.todoId).isEqualTo(1L)
         assertThat(result.startTime).isEqualTo(LocalTime.of(7, 0))
         assertThat(result.date).isEqualTo(today)
+    }
+
+    @Test
+    fun `assign - 요청 date가 있으면 todo date 대신 요청 date로 저장`() {
+        val requestedDate = LocalDate.of(2026, 5, 3)
+        given(todoQueryRepository.findById(1L)).willReturn(todo)
+        given(scheduleQueryRepository.findByTodoId(1L)).willReturn(null)
+        given(scheduleRepository.save(any())).willAnswer { invocation -> invocation.arguments[0] as Schedule }
+
+        val result = scheduleService.assign(
+            userId,
+            AssignScheduleRequest(todoId = 1L, date = requestedDate, startTime = LocalTime.of(7, 0))
+        )
+
+        val scheduleCaptor = argumentCaptor<Schedule>()
+        then(scheduleRepository).should().save(scheduleCaptor.capture())
+        assertThat(scheduleCaptor.firstValue.date).isEqualTo(requestedDate)
+        assertThat(result.date).isEqualTo(requestedDate)
     }
 
     @Test
@@ -99,8 +118,8 @@ class ScheduleServiceTest {
     @Test
     fun `getByDate - 날짜별 일정 목록 반환`() {
         val items = listOf(
-            DailyScheduleItemResponse(1, 1L, "운동", false, LocalTime.of(7, 0)),
-            DailyScheduleItemResponse(2, 2L, "독서", true, null),
+            DailyScheduleItemResponse(1, 1L, "운동", false, today, LocalTime.of(7, 0), LocalTime.of(8, 0)),
+            DailyScheduleItemResponse(2, 2L, "독서", true, today, null, null),
         )
         given(scheduleQueryRepository.findDailyScheduleByUserIdAndDate(userId, today)).willReturn(items)
 
@@ -108,6 +127,7 @@ class ScheduleServiceTest {
 
         assertThat(result).hasSize(2)
         assertThat(result[0].startTime).isEqualTo(LocalTime.of(7, 0))
+        assertThat(result[0].endTime).isEqualTo(LocalTime.of(8, 0))
         assertThat(result[1].startTime).isNull()
     }
 

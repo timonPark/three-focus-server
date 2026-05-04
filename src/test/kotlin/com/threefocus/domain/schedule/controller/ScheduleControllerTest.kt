@@ -112,8 +112,8 @@ class ScheduleControllerTest {
     @WithMockUser(username = "10")
     fun `GET schedules - 날짜별 일정 시각화 조회 성공`() {
         val items = listOf(
-            DailyScheduleItemResponse(1, 1L, "운동", false, LocalTime.of(7, 0)),
-            DailyScheduleItemResponse(2, 2L, "독서", true, null),
+            DailyScheduleItemResponse(1, 1L, "운동", false, today, LocalTime.of(7, 0), LocalTime.of(8, 0)),
+            DailyScheduleItemResponse(2, 2L, "독서", true, today, null, null),
         )
         given(scheduleService.getByDate(10L, today)).willReturn(items)
 
@@ -123,6 +123,8 @@ class ScheduleControllerTest {
             status { isOk() }
             jsonPath("$.length()") { value(2) }
             jsonPath("$[0].title") { value("운동") }
+            jsonPath("$[0].date") { value("2026-04-30") }
+            jsonPath("$[0].endTime") { value("08:00:00") }
             jsonPath("$[1].startTime") { value(null) }
         }
     }

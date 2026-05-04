@@ -21,27 +21,44 @@ class ScheduleQueryRepository(private val dsl: DSLContext) {
 
     fun findDailyScheduleByUserIdAndDate(userId: Long, date: LocalDate): List<DailyScheduleItemResponse> =
         dsl.select(
-            DSL.field("t3.order_index"),
-            DSL.field("t3.todo_id"),
-            DSL.field("td.title"),
-            DSL.field("td.is_completed"),
-            DSL.field("s.start_time"),
+            DSL.field("coalesce(t3.order_index, 0)").`as`("order_index"),
+            DSL.field("coalesce(t3.todo_id, td.id)").`as`("todo_id"),
+            DSL.field("td.title").`as`("title"),
+            DSL.field("td.is_completed").`as`("is_completed"),
+            DSL.field("coalesce(s.date, t3.date, td.date)").`as`("date"),
+            DSL.field("s.start_time").`as`("start_time"),
+            DSL.field("s.end_time").`as`("end_time"),
         )
-            .from(DSL.table("top3").`as`("t3"))
-            .join(DSL.table("todos").`as`("td")).on(DSL.field("t3.todo_id").eq(DSL.field("td.id")))
-            .leftJoin(DSL.table("schedules").`as`("s")).on(DSL.field("s.todo_id").eq(DSL.field("td.id")))
-            .where(
-                DSL.field("t3.user_id", Long::class.java).eq(userId)
+            .from(DSL.table("todos").`as`("td"))
+            .leftJoin(DSL.table("schedules").`as`("s")).on(
+                DSL.field("s.todo_id").eq(DSL.field("td.id"))
+                    .and(DSL.field("s.date", LocalDate::class.java).eq(date))
+            )
+            .leftJoin(DSL.table("top3").`as`("t3")).on(
+                DSL.field("t3.todo_id").eq(DSL.field("td.id"))
+                    .and(DSL.field("t3.user_id", Long::class.java).eq(userId))
                     .and(DSL.field("t3.date", LocalDate::class.java).eq(date))
             )
-            .orderBy(DSL.field("t3.order_index").asc())
+            .where(
+                DSL.field("td.user_id", Long::class.java).eq(userId)
+                    .and(
+                        DSL.field("s.id").isNotNull
+                            .or(DSL.field("t3.id").isNotNull)
+                    )
+            )
+            .orderBy(
+                DSL.field("coalesce(t3.order_index, 999)").asc(),
+                DSL.field("s.start_time").asc(),
+            )
             .fetch { record ->
                 DailyScheduleItemResponse(
                     orderIndex = record.get("order_index", Int::class.java),
                     todoId = record.get("todo_id", Long::class.java),
                     title = record.get("title", String::class.java),
                     isCompleted = record.get("is_completed", Boolean::class.java),
+                    date = record.get("date", LocalDate::class.java),
                     startTime = record.get("start_time", LocalTime::class.java),
+                    endTime = record.get("end_time", LocalTime::class.java),
                 )
             }
 
