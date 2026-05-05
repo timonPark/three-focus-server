@@ -8,6 +8,9 @@ import com.threefocus.domain.auth.dto.SignUpRequest
 import com.threefocus.domain.auth.dto.TokenResponse
 import com.threefocus.domain.auth.service.AuthService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -20,7 +23,13 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/auth")
 class AuthController(private val authService: AuthService) {
 
-    @Operation(summary = "회원가입")
+    @Operation(
+        summary = "회원가입",
+        responses = [ApiResponse(
+            responseCode = "201",
+            content = [Content(schema = Schema(implementation = TokenResponse::class))],
+        )],
+    )
     @PostMapping("/sign-up")
     @ResponseStatus(HttpStatus.CREATED)
     fun signUp(@Valid @RequestBody request: SignUpRequest): TokenResponse =
