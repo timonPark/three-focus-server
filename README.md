@@ -118,7 +118,7 @@ docker compose -f docker/docker-compose.db.yml up -d
 
 **Docker**
 
-프로젝트 루트에 `.env` 파일을 생성합니다:
+프로젝트 루트에 `.env.local` 파일을 생성합니다:
 
 ```
 JWT_SECRET=your-secret-key-at-least-256-bits
@@ -127,7 +127,7 @@ GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
 ```bash
-docker compose -f docker/docker-compose.server.yml up -d
+docker compose -f docker/docker-compose.server.yml --env-file .env.local up -d
 ```
 
 ### 3. API 문서 확인
