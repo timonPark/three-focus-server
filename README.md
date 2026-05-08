@@ -103,7 +103,7 @@ src/main/kotlin/com/threefocus
 ### 1. DB 실행
 
 ```bash
-docker-compose up -d
+docker compose -f docker/docker-compose.db.yml up -d
 ```
 
 ### 2. 애플리케이션 실행
