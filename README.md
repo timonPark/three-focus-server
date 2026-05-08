@@ -122,8 +122,8 @@ docker compose -f docker/docker-compose.db.yml --env-file .env.local up -d
 
 ```
 DB_NAME=three_focus
-DB_USER=${DB_USER}
-DB_PASSWORD=${DB_PASSWORD}
+DB_USER=your-db-user
+DB_PASSWORD=your-db-password
 JWT_SECRET=your-secret-key-at-least-256-bits
 CORS_ALLOWED_ORIGINS=https://your-frontend.com
 GOOGLE_CLIENT_ID=your-google-client-id
