@@ -108,11 +108,27 @@ docker compose -f docker/docker-compose.db.yml up -d
 
 ### 2. 애플리케이션 실행
 
+**로컬 (Gradle)**
+
 ```bash
 ./gradlew bootRun
 ```
 
 기본 실행 환경은 `local`이며, `application-local.yml` 설정이 적용됩니다.
+
+**Docker**
+
+프로젝트 루트에 `.env` 파일을 생성합니다:
+
+```
+JWT_SECRET=your-secret-key-at-least-256-bits
+CORS_ALLOWED_ORIGINS=https://your-frontend.com
+GOOGLE_CLIENT_ID=your-google-client-id
+```
+
+```bash
+docker compose -f docker/docker-compose.server.yml up -d
+```
 
 ### 3. API 문서 확인
 
