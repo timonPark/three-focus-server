@@ -103,7 +103,7 @@ src/main/kotlin/com/threefocus
 ### 1. DB 실행
 
 ```bash
-docker compose -f docker/docker-compose.db.yml up -d
+docker compose -f docker/docker-compose.db.yml --env-file .env.local up -d
 ```
 
 ### 2. 애플리케이션 실행
@@ -121,6 +121,9 @@ docker compose -f docker/docker-compose.db.yml up -d
 프로젝트 루트에 `.env.local` 파일을 생성합니다:
 
 ```
+DB_NAME=three_focus
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
 JWT_SECRET=your-secret-key-at-least-256-bits
 CORS_ALLOWED_ORIGINS=https://your-frontend.com
 GOOGLE_CLIENT_ID=your-google-client-id
