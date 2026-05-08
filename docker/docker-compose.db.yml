@@ -10,6 +10,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - three_focus_net
 
 volumes:
   postgres_data:
+
+networks:
+  three_focus_net:
+    name: three_focus_net
