@@ -1,12 +1,11 @@
 services:
   server:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    image: ${IMAGE}
     container_name: three_focus_server
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_HOST: three_focus_db
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
@@ -14,6 +13,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "8080:8080"
+    restart: unless-stopped
     networks:
       - three_focus_net
 
