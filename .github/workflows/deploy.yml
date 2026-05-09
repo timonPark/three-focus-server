@@ -62,4 +62,4 @@ jobs:
 
             docker network create three_focus_net || true
             docker compose -f ~/app/docker/docker-compose.server.yml --env-file ~/app/.env pull
-            docker compose -f ~/app/docker/docker-compose.server.yml --env-file ~/app/.env up -d --remove-orphans
+            docker compose -f ~/app/docker/docker-compose.server.yml --env-file ~/app/.env up -d
