@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: docker/docker-compose.server.yml
-          target: ~/app/
+          target: /home/cloud-user/app/
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
@@ -49,6 +49,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            sudo su - cloud-user << 'USEREOF'
             cat > ~/app/.env << 'ENVEOF'
             IMAGE=${{ env.IMAGE }}
             DB_HOST=${{ secrets.DB_HOST }}
@@ -63,3 +64,4 @@ jobs:
             docker network create three_focus_net || true
             docker compose -f ~/app/docker/docker-compose.server.yml --env-file ~/app/.env pull
             docker compose -f ~/app/docker/docker-compose.server.yml --env-file ~/app/.env up -d
+            USEREOF
